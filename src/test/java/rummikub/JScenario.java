@@ -8,9 +8,11 @@ import java.util.Scanner;
 
 public class JScenario {
     public ArrayList<String> steps;
+    public String stepDefs;
 
-    public JScenario(String fn) {
+    public JScenario(String fn, String sd) {
         steps = openFile(fn);
+        stepDefs = sd;
     }
 
     private ArrayList<String> openFile(String filename) {
@@ -28,12 +30,12 @@ public class JScenario {
     }
 
     public void run() throws Exception {
-        Class stepDefs = Class.forName("rummikub.JStepDefs");
-        Object obj = stepDefs.getDeclaredConstructor().newInstance();
+        Class stepDefsClass = Class.forName(this.stepDefs);
+        Object obj = stepDefsClass.getDeclaredConstructor().newInstance();
 
         parseSteps();
         for (String step : steps) {
-            Method method = stepDefs.getDeclaredMethod(step, null);
+            Method method = stepDefsClass.getDeclaredMethod(step, null);
             method.setAccessible(true);
             method.invoke(obj, null);
         }
@@ -56,7 +58,7 @@ public class JScenario {
     }
 
     public static void main(String[] args) throws Exception {
-        JScenario sc1 = new JScenario("src/test/java/rummikub/meld_testing.jfeature");
+        JScenario sc1 = new JScenario("src/test/java/rummikub/meld_testing.jfeature", "rummikub.JStepDefs");
         sc1.run();
     }
 }
