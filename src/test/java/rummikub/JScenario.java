@@ -11,7 +11,7 @@ import java.util.Scanner;
 public class JScenario {
     public ArrayList<String> steps;
     public String stepDefs;
-    public LinkedHashMap<String, ArrayList<String>> parsedSteps;
+    public LinkedHashMap<String, ArrayList<Object>> parsedSteps;
     public Hashtable<String, ArrayList<String>> methods;
 
     public JScenario(String fn, String sd) {
@@ -40,10 +40,22 @@ public class JScenario {
         parseStepDefs();
         parseSteps();
         for (String step : parsedSteps.keySet()) {
-            Method method = stepDefsClass.getDeclaredMethod(step, null);
+            Method method = stepDefsClass.getDeclaredMethod(step, getParamTypes(step));
             method.setAccessible(true);
-            method.invoke(obj, null);
+            method.invoke(obj, parsedSteps.get(step).toArray());
         }
+    }
+
+    private Class[] getParamTypes(String step) {
+        ArrayList<String> pTypes = methods.get(step);
+        Class[] paramTypes = new Class[pTypes.size()];
+        for (int i = 0; i < pTypes.size(); ++i) {
+            if (pTypes.get(i).equals("int"))
+                paramTypes[i] = int.class;
+            else if (pTypes.get(i).equals("string"))
+                paramTypes[i] = String.class;
+        }
+        return paramTypes;
     }
 
     private void parseSteps() throws Exception {
@@ -55,7 +67,7 @@ public class JScenario {
                 throw new Exception("Scenario step must start with Given, When, or Then");
 
             String parsedStep = "";
-            ArrayList<String> params = new ArrayList<>();
+            ArrayList<Object> params = new ArrayList<>();
             Boolean isParameter = false;
             String param = ""; //temp variable to hold string parameter (that can include spaces)
 
@@ -72,18 +84,14 @@ public class JScenario {
                 } else if (isParameter) {
                     param += " " + words[j];
                 } else if (isNumeric(words[j])) {
-                    params.add(words[j]);
+                    params.add(Integer.parseInt(words[j]));
                 } else {
                     parsedStep += words[j].toLowerCase();
                     parsedStep += "_";
                 }
             }
 
-            //trim trailing underscore if necessary
-            if (parsedStep.endsWith("_"))
-                parsedStep = parsedStep.substring(0, parsedStep.length()-1);
-
-            parsedSteps.put(parsedStep, params);
+            parsedSteps.put(trimTrailingUnderscore(parsedStep), params);
         }
     }
 
@@ -95,9 +103,15 @@ public class JScenario {
         return true;
     }
 
+    private String trimTrailingUnderscore(String str) {
+        if (str.endsWith("_"))
+            return str.substring(0, str.length()-1);
+        return str;
+    }
+
     /* Reads all methods in step defs class, loads method names and parameters with their index */
     private void parseStepDefs() throws Exception {
-        methods = new Hashtable<>(); //<method_name, [parameters@idx]>
+        methods = new Hashtable<>(); //<method_name, [parameters]>
 
         //loop through all declared methods in step defs class
         for (Method m : JStepDefs.class.getMethods()) {
@@ -113,13 +127,13 @@ public class JScenario {
 
             for (int i = 0; i < words.length; ++i) {
                 if (words[i].startsWith("{") && words[i].endsWith("}")) {
-                    params.add(words[i].substring(1, words[i].length()-1) + "@"+i);
+                    params.add(words[i].substring(1, words[i].length()-1));
                 } else {
                     parsedCond += words[i] + "_";
                 }
             }
 
-            methods.put(parsedCond, params);
+            methods.put(trimTrailingUnderscore(parsedCond), params);
         }
     }
 
