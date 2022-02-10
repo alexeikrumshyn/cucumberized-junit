@@ -19,6 +19,11 @@ public class JScenario {
         stepDefs = sd;
     }
 
+    /**
+     * Opens, reads and saves step definitions from a file into the steps class variable
+     * @param filename filepath of scenario
+     * @return an ArrayList of steps
+     */
     private ArrayList<String> openFile(String filename) {
         ArrayList<String> steps = new ArrayList<>();
         try {
@@ -33,6 +38,10 @@ public class JScenario {
         return steps;
     }
 
+    /**
+     * Main logic of class - calls parsing functions and invokes step methods
+     * @throws Exception
+     */
     public void run() throws Exception {
         Class stepDefsClass = Class.forName(this.stepDefs);
         Object obj = stepDefsClass.getDeclaredConstructor().newInstance();
@@ -46,6 +55,11 @@ public class JScenario {
         }
     }
 
+    /**
+     * Looks up parameter types of a given step in the methods Hashtable
+     * @param step for which the parameter types will be retrieved
+     * @return an array of Class objects corresponding to the step's parameter types
+     */
     private Class[] getParamTypes(String step) {
         ArrayList<String> pTypes = methods.get(step);
         Class[] paramTypes = new Class[pTypes.size()];
@@ -58,6 +72,10 @@ public class JScenario {
         return paramTypes;
     }
 
+    /**
+     * Parses the scenario's steps into a LinkedHashMap, which contains the method names as keys, and ArrayLists of parameters as values.
+     * @throws Exception
+     */
     private void parseSteps() throws Exception {
         parsedSteps = new LinkedHashMap<>(); //<method_name, [parameters]>
         for (int i = 0; i < steps.size(); ++i) {
@@ -95,6 +113,11 @@ public class JScenario {
         }
     }
 
+    /**
+     * Checks if a string contains only numeric values
+     * @param str input
+     * @return boolean
+     */
     private Boolean isNumeric(String str) {
         for (int i = 0; i < str.length(); ++i) {
             if (!Character.isDigit(str.charAt(i)))
@@ -103,13 +126,21 @@ public class JScenario {
         return true;
     }
 
+    /**
+     * If a string ends with an underscore, remove it
+     * @param str input
+     * @return string without a trailing underscore
+     */
     private String trimTrailingUnderscore(String str) {
         if (str.endsWith("_"))
             return str.substring(0, str.length()-1);
         return str;
     }
 
-    /* Reads all methods in step defs class, loads method names and parameters with their index */
+    /**
+     * Reads all methods in step defs class, loads method names and their parameter types into a Hashtable
+     * @throws Exception
+     */
     private void parseStepDefs() throws Exception {
         methods = new Hashtable<>(); //<method_name, [parameters]>
 
