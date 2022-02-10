@@ -5,11 +5,13 @@ import java.io.FileNotFoundException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Hashtable;
+import java.util.LinkedHashMap;
 import java.util.Scanner;
 
 public class JScenario {
     public ArrayList<String> steps;
     public String stepDefs;
+    public LinkedHashMap<String, ArrayList<String>> parsedSteps;
     public Hashtable<String, ArrayList<String>> methods;
 
     public JScenario(String fn, String sd) {
@@ -37,7 +39,7 @@ public class JScenario {
 
         parseStepDefs();
         parseSteps();
-        for (String step : steps) {
+        for (String step : parsedSteps.keySet()) {
             Method method = stepDefsClass.getDeclaredMethod(step, null);
             method.setAccessible(true);
             method.invoke(obj, null);
@@ -45,19 +47,52 @@ public class JScenario {
     }
 
     private void parseSteps() throws Exception {
+        parsedSteps = new LinkedHashMap<>(); //<method_name, [parameters]>
         for (int i = 0; i < steps.size(); ++i) {
-            String[] words = steps.get(i).toLowerCase().split(" ");
-            if (!words[0].equals("given") && !words[0].equals("when") && !words[0].equals("then"))
+            String[] words = steps.get(i).split(" ");
+            String firstWord = words[0].toLowerCase();
+            if (!firstWord.equals("given") && !firstWord.equals("when") && !firstWord.equals("then"))
                 throw new Exception("Scenario step must start with Given, When, or Then");
 
             String parsedStep = "";
+            ArrayList<String> params = new ArrayList<>();
+            Boolean isParameter = false;
+            String param = ""; //temp variable to hold string parameter (that can include spaces)
+
             for (int j = 1; j < words.length; ++j) {
-                parsedStep += words[j];
-                if (j != words.length - 1)
+
+                if (words[j].startsWith("\"")) {
+                    param = words[j].substring(1);
+                    isParameter = true;
+                } else if (words[j].endsWith("\"")) {
+                    param += " " + words[j].substring(0, words[j].length()-1);
+                    params.add(param);
+                    isParameter = false;
+                    param = "";
+                } else if (isParameter) {
+                    param += " " + words[j];
+                } else if (isNumeric(words[j])) {
+                    params.add(words[j]);
+                } else {
+                    parsedStep += words[j].toLowerCase();
                     parsedStep += "_";
+                }
             }
-            steps.set(i, parsedStep);
+
+            //trim trailing underscore if necessary
+            if (parsedStep.endsWith("_"))
+                parsedStep = parsedStep.substring(0, parsedStep.length()-1);
+
+            parsedSteps.put(parsedStep, params);
         }
+    }
+
+    private Boolean isNumeric(String str) {
+        for (int i = 0; i < str.length(); ++i) {
+            if (!Character.isDigit(str.charAt(i)))
+                return false;
+        }
+        return true;
     }
 
     /* Reads all methods in step defs class, loads method names and parameters with their index */
@@ -83,9 +118,6 @@ public class JScenario {
                     parsedCond += words[i] + "_";
                 }
             }
-            //trim trailing underscore if necessary
-            if (parsedCond.endsWith("_"))
-                parsedCond = parsedCond.substring(0, parsedCond.length()-1);
 
             methods.put(parsedCond, params);
         }
