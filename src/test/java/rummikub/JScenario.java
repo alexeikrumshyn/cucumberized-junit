@@ -2,11 +2,9 @@ package rummikub;
 
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.util.ArrayList;
-import java.util.Hashtable;
-import java.util.LinkedHashMap;
-import java.util.Scanner;
+import java.util.*;
 
 public class JScenario {
     public ArrayList<String> steps;
@@ -137,6 +135,20 @@ public class JScenario {
         return str;
     }
 
+    /** Returns the condition of the step that is non-empty
+     *
+     * @param step JStep annotation to analyze
+     * @return
+     */
+    private String getStepString(JStep step) throws InvocationTargetException, IllegalAccessException {
+        String str = "";
+        for (Method m : step.annotationType().getDeclaredMethods()) {
+            String cond = (String) m.invoke(step, null);
+            if (!cond.equals("")) str = cond;
+        }
+        return str.toLowerCase();
+    }
+
     /**
      * Reads all methods in step defs class, loads method names and their parameter types into a Hashtable
      * @throws Exception
@@ -146,11 +158,11 @@ public class JScenario {
 
         //loop through all declared methods in step defs class
         for (Method m : JStepDefs.class.getMethods()) {
-            JGiven intfc = m.getAnnotation(JGiven.class);
+            JStep intfc = m.getAnnotation(JStep.class);
             if (intfc == null)
                 continue;
 
-            String cond = intfc.cond().toLowerCase();
+            String cond = getStepString(intfc);
             String[] words = cond.split(" ");
 
             String parsedCond = "";

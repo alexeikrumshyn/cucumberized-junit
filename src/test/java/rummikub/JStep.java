@@ -7,6 +7,8 @@ import java.lang.annotation.Target;
 
 @Target({ElementType.ANNOTATION_TYPE, ElementType.METHOD})
 @Retention(RetentionPolicy.RUNTIME)
-public @interface JGiven {
-    String cond() default "";
+public @interface JStep {
+    String given() default "";
+    String when() default "";
+    String then() default "";
 }
