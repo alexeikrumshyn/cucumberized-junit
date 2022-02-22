@@ -16,4 +16,9 @@ public class JStepDefs {
             srv.players[pNum-1].drawTile(str);
         }
     }
+
+    @JStep(when = "Player {int} draws {string}")
+    public void player_draws(int pNum, String tile) {
+        srv.players[pNum-1].drawTile(tile);
+    }
 }
