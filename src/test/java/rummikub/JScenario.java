@@ -89,7 +89,9 @@ public class JScenario {
 
             for (int j = 1; j < words.length; ++j) {
 
-                if (words[j].startsWith("\"")) {
+                if (words[j].startsWith("\"") && words[j].endsWith("\"")) {
+                    params.add(words[j].substring(1, words[j].length()-1));
+                } else if (words[j].startsWith("\"")) {
                     param = words[j].substring(1);
                     isParameter = true;
                 } else if (words[j].endsWith("\"")) {
