@@ -79,8 +79,8 @@ public class JScenario {
         for (int i = 0; i < steps.size(); ++i) {
             String[] words = steps.get(i).split(" ");
             String firstWord = words[0].toLowerCase();
-            if (!firstWord.equals("given") && !firstWord.equals("when") && !firstWord.equals("then"))
-                throw new Exception("Scenario step must start with Given, When, or Then");
+            if (!firstWord.equals("given") && !firstWord.equals("when") && !firstWord.equals("then") && !firstWord.equals("and"))
+                throw new Exception("Scenario step must start with Given, When, Then, or And");
 
             String parsedStep = "";
             ArrayList<Object> params = new ArrayList<>();
