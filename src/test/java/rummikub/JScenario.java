@@ -78,7 +78,7 @@ public class JScenario {
                 //finalize previous scenario
                 if (!tempScenarioTitle.equals("")) {
                     featureDetails.put(tempScenarioTitle, tempScenarioSteps);
-                    tempScenarioSteps.clear();
+                    tempScenarioSteps = new ArrayList<>();
                 }
                 tempScenarioTitle = line.replace("Scenario:", "").trim();
             } else if (!line.trim().equals("")) {
