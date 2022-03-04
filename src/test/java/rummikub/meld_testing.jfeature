@@ -1,4 +1,7 @@
-Given test server is started
-And Player 1 hand starts with "R5 B5 G5"
-When Player 1 draws "O1"
-Then Player 1 hand contains "R5 B5 G5 O1"
+Feature: Test Feature
+
+  Scenario: Adding to a hand by drawing a tile
+    Given test server is started
+    And Player 1 hand starts with "R5 B5 G5"
+    When Player 1 draws "O1"
+    Then Player 1 hand contains "R5 B5 G5 O1"

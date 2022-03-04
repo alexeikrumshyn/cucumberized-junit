@@ -7,14 +7,13 @@ import java.lang.reflect.Method;
 import java.util.*;
 
 public class JScenario {
-    public ArrayList<String> steps;
-    public String stepDefs;
-    public LinkedHashMap<String, ArrayList<Object>> parsedSteps;
+    public ArrayList<String> allFileLines;
+    public String stepDefsFileName;
     public Hashtable<String, ArrayList<String>> methods;
 
     public JScenario(String fn, String sd) {
-        steps = openFile(fn);
-        stepDefs = sd;
+        allFileLines = openFile(fn);
+        stepDefsFileName = sd;
     }
 
     /**
@@ -23,17 +22,17 @@ public class JScenario {
      * @return an ArrayList of steps
      */
     private ArrayList<String> openFile(String filename) {
-        ArrayList<String> steps = new ArrayList<>();
+        ArrayList<String> allFileLines = new ArrayList<>();
         try {
             Scanner scanner = new Scanner(new File(filename));
             while (scanner.hasNextLine()) {
-                steps.add(scanner.nextLine());
+                allFileLines.add(scanner.nextLine());
             }
             scanner.close();
         } catch (FileNotFoundException e) {
             e.printStackTrace();
         }
-        return steps;
+        return allFileLines;
     }
 
     /**
@@ -41,16 +40,57 @@ public class JScenario {
      * @throws Exception
      */
     public void run() throws Exception {
-        Class stepDefsClass = Class.forName(this.stepDefs);
+        Class stepDefsClass = Class.forName(this.stepDefsFileName);
         Object obj = stepDefsClass.getDeclaredConstructor().newInstance();
 
         parseStepDefs();
-        parseSteps();
-        for (String step : parsedSteps.keySet()) {
-            Method method = stepDefsClass.getDeclaredMethod(step, getParamTypes(step));
-            method.setAccessible(true);
-            method.invoke(obj, parsedSteps.get(step).toArray());
+        Hashtable<String, ArrayList<String>> featureDetails = parseFeatureFile();
+        System.out.println("Running feature: "+featureDetails.get("title")+"\n");
+        for (String k : featureDetails.keySet()) {
+
+            if (k.equals("title"))
+                continue;
+
+            System.out.println("Scenario: " +k);
+            LinkedHashMap<String, ArrayList<Object>> scenarioSteps = parseSteps(featureDetails.get(k));
+            for (String step : scenarioSteps.keySet()) {
+                Method method = stepDefsClass.getDeclaredMethod(step, getParamTypes(step));
+                method.setAccessible(true);
+                method.invoke(obj, scenarioSteps.get(step).toArray());
+            }
         }
+    }
+
+    /**
+     * Parses jfeature file and separates it into separate scenarios, and identifies the feature title
+     */
+    private Hashtable<String, ArrayList<String>> parseFeatureFile() {
+        Hashtable<String, ArrayList<String>> featureDetails = new Hashtable<>();
+        ArrayList<String> tempScenarioSteps = new ArrayList<>();
+        String tempScenarioTitle = "";
+
+        for (String line : allFileLines) {
+            //title of feature
+            if (line.startsWith("Feature:")) {
+                String featureTitle = line.replace("Feature:", "").trim();
+                featureDetails.put("title", new ArrayList<>(Arrays.asList(featureTitle)));
+            } else if (line.trim().startsWith("Scenario:")) {
+                //finalize previous scenario
+                if (!tempScenarioTitle.equals("")) {
+                    featureDetails.put(tempScenarioTitle, tempScenarioSteps);
+                    tempScenarioSteps.clear();
+                }
+                tempScenarioTitle = line.replace("Scenario:", "").trim();
+            } else if (!line.trim().equals("")) {
+                tempScenarioSteps.add(line.trim());
+            }
+        }
+
+        //add last scenario
+        if (!tempScenarioTitle.equals(""))
+            featureDetails.put(tempScenarioTitle, tempScenarioSteps);
+
+        return featureDetails;
     }
 
     /**
@@ -74,8 +114,8 @@ public class JScenario {
      * Parses the scenario's steps into a LinkedHashMap, which contains the method names as keys, and ArrayLists of parameters as values.
      * @throws Exception
      */
-    private void parseSteps() throws Exception {
-        parsedSteps = new LinkedHashMap<>(); //<method_name, [parameters]>
+    private LinkedHashMap<String, ArrayList<Object>> parseSteps(ArrayList<String> steps) throws Exception {
+        LinkedHashMap<String, ArrayList<Object>> parsedSteps = new LinkedHashMap<>(); //<method_name, [parameters]>
         for (int i = 0; i < steps.size(); ++i) {
             String[] words = steps.get(i).split(" ");
             String firstWord = words[0].toLowerCase();
@@ -111,6 +151,7 @@ public class JScenario {
 
             parsedSteps.put(trimTrailingUnderscore(parsedStep), params);
         }
+        return parsedSteps;
     }
 
     /**
