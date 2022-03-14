@@ -51,12 +51,40 @@ public class JScenario {
             if (k.equals("title"))
                 continue;
 
-            System.out.println("Scenario: " +k);
             LinkedHashMap<String, ArrayList<Object>> scenarioSteps = parseSteps(featureDetails.get(k));
-            for (String step : scenarioSteps.keySet()) {
-                Method method = stepDefsClass.getDeclaredMethod(step, getParamTypes(step));
-                method.setAccessible(true);
-                method.invoke(obj, scenarioSteps.get(step).toArray());
+            int numExamples = 1;
+
+            //detect use of example table
+            ArrayList<LinkedHashMap<String, Object>> examples = null;
+            if (k.contains(": Example ")) {
+                 examples = parseExamples(featureDetails.get(k));
+                 numExamples = examples.size();
+            } else {
+                System.out.println("Scenario: " +k);
+            }
+
+            for (int row = 0; row < numExamples; ++row) {
+                if (k.contains(": Example ")) {
+                    System.out.println("Scenario: "+k+(row+1));
+                }
+                for (String step : scenarioSteps.keySet()) {
+                    Method method = stepDefsClass.getDeclaredMethod(step, getParamTypes(step));
+                    method.setAccessible(true);
+
+                    ArrayList<Object> params = new ArrayList<>();
+                    if (k.contains(": Example ")) {
+                        //find corresponding parameter in table to parameter name in step
+                        for (Object param : scenarioSteps.get(step)) {
+                            if (param instanceof String && ((String) param).startsWith("<") && ((String) param).endsWith(">"))
+                                params.add(examples.get(row).get(((String) param).replace("<","").replace(">","")));
+                            else
+                                params.add(param);
+                        }
+                    } else {
+                        params = scenarioSteps.get(step);
+                    }
+                    method.invoke(obj, params.toArray());
+                }
             }
         }
     }
@@ -74,6 +102,12 @@ public class JScenario {
             if (line.startsWith("Feature:")) {
                 String featureTitle = line.replace("Feature:", "").trim();
                 featureDetails.put("title", new ArrayList<>(Arrays.asList(featureTitle)));
+            } else if (line.trim().startsWith("Scenario Outline:")) {
+                if (!tempScenarioTitle.equals("")) {
+                    featureDetails.put(tempScenarioTitle, tempScenarioSteps);
+                    tempScenarioSteps = new ArrayList<>();
+                }
+                tempScenarioTitle = line.replace("Scenario Outline:", "").trim() + ": Example ";
             } else if (line.trim().startsWith("Scenario:")) {
                 //finalize previous scenario
                 if (!tempScenarioTitle.equals("")) {
@@ -111,12 +145,60 @@ public class JScenario {
     }
 
     /**
+     * Given scenario outline, parse the example table into a list of key-value pairs
+     * @param steps all steps of a scenario outline
+     * @return list of key-value pairs (param_name, param_value)
+     */
+    private ArrayList<LinkedHashMap<String, Object>> parseExamples(ArrayList<String> steps) {
+
+        ArrayList<LinkedHashMap<String, Object>> examples = new ArrayList<>();
+        boolean isExample = false;
+        ArrayList<String> paramNames = new ArrayList<>();
+        for (String step : steps) {
+
+            if (step.trim().contains("Examples:")) {
+                isExample = true;
+                continue;
+            }
+
+            if (isExample) {
+                if (paramNames.isEmpty()) {
+                    for (String s : step.split("\\|")) {
+                        if (!s.trim().equals(""))
+                            paramNames.add(s.trim());
+                    }
+                } else {
+                    LinkedHashMap<String, Object> params = new LinkedHashMap<>();
+                    int count = 0;
+                    for (String s : step.split("\\|")) {
+                        if (!s.trim().equals("")) {
+                            if (isNumeric(s.trim())) {
+                                params.put(paramNames.get(count),Integer.parseInt(s.trim()));
+                            } else {
+                                params.put(paramNames.get(count), s.replace("\"", "").trim());
+                            }
+                            count++;
+                        }
+                    }
+                    examples.add(params);
+                }
+            }
+        }
+        return examples;
+    }
+
+    /**
      * Parses the scenario's steps into a LinkedHashMap, which contains the method names as keys, and ArrayLists of parameters as values.
      * @throws Exception
      */
     private LinkedHashMap<String, ArrayList<Object>> parseSteps(ArrayList<String> steps) throws Exception {
         LinkedHashMap<String, ArrayList<Object>> parsedSteps = new LinkedHashMap<>(); //<method_name, [parameters]>
         for (int i = 0; i < steps.size(); ++i) {
+
+            //stop if example table is detected
+            if (steps.get(i).trim().equals("Examples:"))
+                break;
+
             String[] words = steps.get(i).split(" ");
             String firstWord = words[0].toLowerCase();
             if (!firstWord.equals("given") && !firstWord.equals("when") && !firstWord.equals("then") && !firstWord.equals("and"))
@@ -129,21 +211,23 @@ public class JScenario {
 
             for (int j = 1; j < words.length; ++j) {
 
-                if (words[j].startsWith("\"") && words[j].endsWith("\"")) {
+                if (words[j].startsWith("<") && words[j].endsWith(">")) { //param in example table
+                    params.add(words[j]);
+                } else if (words[j].startsWith("\"") && words[j].endsWith("\"")) { //1-word string param
                     params.add(words[j].substring(1, words[j].length()-1));
-                } else if (words[j].startsWith("\"")) {
+                } else if (words[j].startsWith("\"")) { //start of multi-word string param
                     param = words[j].substring(1);
                     isParameter = true;
-                } else if (words[j].endsWith("\"")) {
+                } else if (words[j].endsWith("\"")) { //end of multi-word string param
                     param += " " + words[j].substring(0, words[j].length()-1);
                     params.add(param);
                     isParameter = false;
                     param = "";
-                } else if (isParameter) {
+                } else if (isParameter) { //middle of multi-word string param
                     param += " " + words[j];
-                } else if (isNumeric(words[j])) {
+                } else if (isNumeric(words[j])) { //int param
                     params.add(Integer.parseInt(words[j]));
-                } else {
+                } else { //not a param
                     parsedStep += words[j].toLowerCase();
                     parsedStep += "_";
                 }

@@ -1,5 +1,11 @@
 package rummikub;
 
+import io.cucumber.java.en.Given;
+import io.cucumber.java.en.Then;
+import io.cucumber.java.en.When;
+
+import java.io.ByteArrayInputStream;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -20,9 +26,33 @@ public class JStepDefs {
         }
     }
 
+    @JStep(given = "Player {int} has played initial points")
+    public void player_has_played_initial_points(int pNum) {
+        srv.players[pNum-1].hasInitialPoints = true;
+    }
+
     @JStep(when = "Player {int} draws {string}")
     public void player_draws(int pNum, String tile) {
         srv.players[pNum-1].drawTile(tile);
+    }
+
+    @JStep(when = "Player {int} plays {string}")
+    public void player_plays(int pNum, String tiles) {
+        String[] meldsPlayed = tiles.split(",");
+        String inString = "";
+        for (String meld : meldsPlayed) {
+            inString += "1\n" + meld + "\n";
+        }
+        inString += "3\n";
+        ByteArrayInputStream in = new ByteArrayInputStream((inString).getBytes());
+        System.setIn(in);
+        srv.players[pNum-1].getAction();
+        srv.game = srv.players[pNum-1].game;
+    }
+
+    @JStep(then = "table contains {string}")
+    public void table_contains(String expected) {
+        assertEquals(expected, srv.game.getTable().replace("|", "").replace("\n",""));
     }
 
     @JStep(then = "Player {int} hand contains {string}")
@@ -35,8 +65,8 @@ public class JStepDefs {
             return;
         }
 
-        String[] expectedTiles = expected.substring(0,expected.length()-1).split(" ");
-        String actualHand = actual.substring(0,actual.length()-1).replace("|", "");
+        String[] expectedTiles = expected.split(" ");
+        String actualHand = actual.replace("|", "");
 
         System.out.println("Expected: "+expected);
         System.out.println("Actual:   "+actualHand);

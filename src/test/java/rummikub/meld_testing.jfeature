@@ -1,5 +1,21 @@
 Feature: Test Feature
 
+  Scenario Outline: Test Validity of Basic Sets
+    Given Test Server is started
+    And Player 1 hand starts with <initialHand>
+    And Player 1 has played initial points
+    When Player 1 plays <tiles>
+    Then table contains <table>
+    And Player 1 hand contains <hand>
+    Examples:
+      | initialHand       | tiles             | table                       | hand                          |
+      | "R5 B5 G5" 		  |  "R5 B5 G5"       | "{ *R5 *B5 *G5 }"		    | ""                            |
+      | "R5 B5 G5 O5" 	  | "R5 B5 G5 O5" 	  | "{ *R5 *B5 *G5 *O5 }"		| ""                            |
+      | "R5 R5 G5" 		  | "R5 R5 G5" 		  |	""		                    | "R5 R5 G5 ? ? ? "             |
+      | "R5 G5 G5 O5" 	  | "R5 G5 G5 O5" 	  |	""		                    | "R5 G5 G5 O5 ? ? ? "          |
+      | "R5 G5 B5 B5 O5"  | "R5 G5 B5 B5 O5"  |	""		                    | "R5 G5 B5 B5 O5 ? ? ? "       |
+      | "R5 G5" 	      | "R5 G5" 	      |	""		                    | "R5 G5 ? ? ? "                |
+
   Scenario: Adding to a hand by drawing a tile
     Given test server is started
     And Player 1 hand starts with "R5 B5 G5"
