@@ -11,9 +11,10 @@ public class JScenario {
     public String stepDefsFileName;
     public Hashtable<String, ArrayList<String>> methods;
 
-    public JScenario(String fn, String sd) {
+    public JScenario(String fn, String sd) throws Exception {
         allFileLines = openFile(fn);
         stepDefsFileName = sd;
+        run();
     }
 
     /**
@@ -307,8 +308,4 @@ public class JScenario {
         }
     }
 
-    public static void main(String[] args) throws Exception {
-        JScenario sc1 = new JScenario("src/test/java/rummikub/meld_testing.jfeature", "rummikub.JStepDefs");
-        sc1.run();
-    }
 }
