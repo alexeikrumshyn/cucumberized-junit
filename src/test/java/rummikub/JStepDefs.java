@@ -32,6 +32,33 @@ public class JStepDefs {
         srv.players[pNum-1].drawTile(tile);
     }
 
+    @JStep(when = "Player {int} chooses to draw")
+    public void player_chooses_to_draw(int pNum) {
+        String expected = "Select an action: \n" +
+                "(1) Play Meld on Table\n" +
+                "(2) Draw Tile and End Turn\n" +
+                "(3) End Turn\n";
+        assertEquals(expected, srv.players[pNum-1].getOptions());
+
+        ByteArrayInputStream in = new ByteArrayInputStream(("2\n").getBytes());
+        System.setIn(in);
+        srv.players[pNum-1].getAction();
+        srv.game = srv.players[pNum-1].game;
+    }
+
+    @JStep(when = "Player {int} has to draw")
+    public void player_has_to_draw(int pNum) {
+        String expected = "Select an action: \n" +
+                "(1) Play Meld on Table\n" +
+                "(2) Draw Tile and End Turn\n";
+        assertEquals(expected, srv.players[pNum-1].getOptions());
+
+        ByteArrayInputStream in = new ByteArrayInputStream(("2\n").getBytes());
+        System.setIn(in);
+        srv.players[pNum-1].getAction();
+        srv.game = srv.players[pNum-1].game;
+    }
+
     @JStep(when = "Player {int} plays {string}")
     public void player_plays(int pNum, String tiles) {
         String[] meldsPlayed = tiles.split(",");
@@ -72,4 +99,15 @@ public class JStepDefs {
                 assertTrue(actualHand.contains(expectedTiles[i]));
         }
     }
+
+    @JStep(then = "Player {int} wins")
+    public void player_wins(int pNum) {
+        assertEquals(srv.players[pNum-1].name, srv.game.getWinner());
+    }
+
+    @JStep(then = "Player {int} score is {int}")
+    public void player_score_is(int pNum, int score) {
+        assertEquals(score, srv.players[pNum-1].score);
+    }
+
 }
