@@ -52,7 +52,7 @@ public class JScenario {
             if (k.equals("title"))
                 continue;
 
-            LinkedHashMap<String, ArrayList<Object>> scenarioSteps = parseSteps(featureDetails.get(k));
+            ArrayList<Map<String, ArrayList<Object>>> scenarioSteps = parseSteps(featureDetails.get(k));
             int numExamples = 1;
 
             //detect use of example table
@@ -68,21 +68,23 @@ public class JScenario {
                 if (k.contains(": Example ")) {
                     System.out.println("Scenario: "+k+(row+1));
                 }
-                for (String step : scenarioSteps.keySet()) {
+                for (Map<String, ArrayList<Object>> stepMap : scenarioSteps) {
+                    String step = (String) stepMap.keySet().toArray()[0];
+                    ArrayList<Object> paramList = stepMap.get(step);
                     Method method = stepDefsClass.getDeclaredMethod(step, getParamTypes(step));
                     method.setAccessible(true);
 
                     ArrayList<Object> params = new ArrayList<>();
                     if (k.contains(": Example ")) {
                         //find corresponding parameter in table to parameter name in step
-                        for (Object param : scenarioSteps.get(step)) {
+                        for (Object param : paramList) {
                             if (param instanceof String && ((String) param).startsWith("<") && ((String) param).endsWith(">"))
                                 params.add(examples.get(row).get(((String) param).replace("<","").replace(">","")));
                             else
                                 params.add(param);
                         }
                     } else {
-                        params = scenarioSteps.get(step);
+                        params = paramList;
                     }
                     method.invoke(obj, params.toArray());
                 }
@@ -189,11 +191,11 @@ public class JScenario {
     }
 
     /**
-     * Parses the scenario's steps into a LinkedHashMap, which contains the method names as keys, and ArrayLists of parameters as values.
+     * Parses the scenario's steps into an ArrayList, which contains Maps with the method names as keys, and ArrayLists of parameters as values.
      * @throws Exception
      */
-    private LinkedHashMap<String, ArrayList<Object>> parseSteps(ArrayList<String> steps) throws Exception {
-        LinkedHashMap<String, ArrayList<Object>> parsedSteps = new LinkedHashMap<>(); //<method_name, [parameters]>
+    private ArrayList<Map<String, ArrayList<Object>>> parseSteps(ArrayList<String> steps) throws Exception {
+        ArrayList<Map<String, ArrayList<Object>>> parsedSteps = new ArrayList<>();
         for (int i = 0; i < steps.size(); ++i) {
 
             //stop if example table is detected
@@ -234,8 +236,12 @@ public class JScenario {
                 }
             }
 
-            parsedSteps.put(trimTrailingUnderscore(parsedStep), params);
+            Map<String, ArrayList<Object>> parsedStepMap = new HashMap<>(); //<method_name, [parameters]>
+            parsedStepMap.put(trimTrailingUnderscore(parsedStep), params);
+            parsedSteps.add(parsedStepMap);
+
         }
+        System.out.println(parsedSteps);
         return parsedSteps;
     }
 
