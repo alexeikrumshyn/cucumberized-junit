@@ -1,4 +1,4 @@
-Feature: Test Feature
+Feature: Test validity of different melds
 
   Scenario Outline: Test Validity of Basic Sets
     Given Test Server is started
@@ -16,14 +16,59 @@ Feature: Test Feature
       | "R5 G5 B5 B5 O5"  | "R5 G5 B5 B5 O5"  |	""		                    | "R5 G5 B5 B5 O5 ? ? ? "       |
       | "R5 G5" 	      | "R5 G5" 	      |	""		                    | "R5 G5 ? ? ? "                |
 
-  Scenario: Adding to a hand by drawing a tile
-    Given test server is started
-    And Player 1 hand starts with "R5 B5 G5"
-    When Player 1 draws "O1"
-    Then Player 1 hand contains "R5 B5 G5 O1"
+  Scenario Outline: Test Validity of Sets with Jokers
+    Given Test Server is started
+    And Player 1 hand starts with <initialHand>
+    And Player 1 has played initial points
+    When Player 1 plays <tiles>
+    Then table contains <table>
+    And Player 1 hand contains <hand>
+    Examples:
+      | initialHand       | tiles             | table                       | hand                          |
+      | "R5 G5 *" 	      | "R5 G5 *" 	      | "{ *R5 ** *G5 }"		    | ""                            |
+      | "R5 * O5" 	      | "R5 * O5" 	      | "{ *R5 ** *O5 }"		    | ""                            |
+      | "* G5 O5" 	      | "* G5 O5" 	      | "{ ** *G5 *O5 }"	        | ""                            |
+      | "R5 B5 G5 *" 	  | "R5 B5 G5 *" 	  |	"{ *R5 *B5 *G5 ** }"		| ""                            |
+      | "R5 B5 * O5" 	  | "R5 B5 * O5" 	  |	"{ *R5 *B5 ** *O5 }"		| ""                            |
+      | "* B5 G5 O5" 	  | "* B5 G5 O5" 	  |	"{ ** *B5 *G5 *O5 }"		| ""                            |
+      | "* * G5"          | "* * G5"          |	"{ ** ** *G5 }"	    	    | ""                            |
+      | "* * G5 O5"       | "* * G5 O5"       |	"{ ** ** *G5 *O5 }"		    | ""                            |
+      | "*"               | "*"               |	""		                    | "? ? ? * "                    |
 
-  Scenario: Adding to a hand by drawing a tile (again)
-    Given test server is started
-    And Player 1 hand starts with "R5 B5 G5"
-    When Player 1 draws "O2"
-    Then Player 1 hand contains "R5 B5 G5 O2"
+  Scenario Outline: Test Validity of Basic Runs
+    Given Test Server is started
+    And Player 1 hand starts with <initialHand>
+    And Player 1 has played initial points
+    When Player 1 plays <tiles>
+    Then table contains <table>
+    And Player 1 hand contains <hand>
+    Examples:
+      | initialHand                                   | tiles                                         | table                                                           | hand              |
+      | "R5 R6 R7"   	                              | "R5 R6 R7"   	                              |	"{ *R5 *R6 *R7 }"		                                        | ""                |
+      | "R1 R2 R3 R4 R5 R6 R7 R8 R9 R10 R11 R12 R13"  | "R1 R2 R3 R4 R5 R6 R7 R8 R9 R10 R11 R12 R13"  |	"{ *R1 *R2 *R3 *R4 *R5 *R6 *R7 *R8 *R9 *R10 *R11 *R12 *R13 }"   | ""                |
+      | "R12 R13 R1" 		                          | "R12 R13 R1" 		                          |	"{ *R12 *R13 *R1 }"		                                        | ""                |
+      | "R13 R1 R2" 		                          | "R13 R1 R2" 		                          |	"{ *R13 *R1 *R2 }"		                                        | ""                |
+      | "R5"         	                              | "R5"         	                              | ""		                                                        | "R5 ? ? ? "       |
+      | "R5 R6" 		                              | "R5 R6" 		                              |	""		                                                        | "R5 R6 ? ? ? "    |
+      | "R5 O6 B7" 	                                  | "R5 O6 B7" 	                                  |	""		                                                        | "R5 O6 B7 ? ? ? " |
+
+  Scenario Outline: Test Validity of Runs with Jokers
+    Given Test Server is started
+    And Player 1 hand starts with <initialHand>
+    And Player 1 has played initial points
+    When Player 1 plays <tiles>
+    Then table contains <table>
+    And Player 1 hand contains <hand>
+    Examples:
+      | initialHand           | tiles                 | table                               | hand                |
+      | "R5 R6 *" 		      | "R5 R6 *" 		      | "{ *R5 *R6 ** }"		            | ""                  |
+      | "R5 * R7" 		      | "R5 * R7" 		      | "{ *R5 ** *R7 }"		            | ""                  |
+      | "* R6 R7 R8" 		  | "* R6 R7 R8" 		  | "{ ** *R6 *R7 *R8 }"		        | ""                  |
+      | "R5 R6 * R8" 		  | "R5 R6 * R8" 		  | "{ *R5 *R6 ** *R8 }"		        | ""                  |
+      | "R5 R6 R7 R8 *" 	  | "R5 R6 R7 R8 *" 	  | "{ *R5 *R6 *R7 *R8 ** }"		    | ""                  |
+      | "R12 R13 *" 	      | "R12 R13 *" 	      | "{ *R12 *R13 ** }"		            | ""                  |
+      | "R13 * R2" 	          | "R13 * R2" 	          | "{ *R13 ** *R2 }"		            | ""                  |
+      | "R11 R12 R13 * R2 R3" | "R11 R12 R13 * R2 R3" | "{ *R11 *R12 *R13 ** *R2 *R3 }"     | ""                  |
+      | "R2 * * R5"           | "R2 * * R5"           | "{ *R2 ** ** *R5 }"		            | ""                  |
+      | "R2 * R4 *"           | "R2 * R4 *"           | "{ *R2 ** *R4 ** }"		            | ""                  |
+      | "R2 * R5" 	          | "R2 * R5" 	          | ""		                            | "R2 * R5 ? ? ? "    |
