@@ -245,7 +245,10 @@ public class JScenario {
      * @return boolean
      */
     private Boolean isNumeric(String str) {
-        for (int i = 0; i < str.length(); ++i) {
+        int startIdx = 0;
+        if (str.charAt(0) == '-') //detect negative numbers
+            startIdx = 1;
+        for (int i = startIdx; i < str.length(); ++i) {
             if (!Character.isDigit(str.charAt(i)))
                 return false;
         }
