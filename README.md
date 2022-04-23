@@ -3,7 +3,6 @@ A fourth year honours project for COMP 4905 at Carleton University. The purpose 
 
 
 ## Getting Started
----
 
 This repo tracks work on "Cucumberized" JUnit. If you wish to use this framework on another program, you can copy these two files to the other program directory.
 ```
@@ -22,7 +21,7 @@ src/test/java/rummikub/JCucumberTestRunner.java
 For examples of feature files written for this tool, see any file in ```src/test/java/rummikub``` with the **.jfeature* extension. These files combine to form a complete test suite for the Rummikub game.
 
 ## More Content
----
+
 This repo also contains a Rummikub test suite in Cucumber. This was intentionally done to do a side-by-side comparison with "Cucumberized" JUnit. The files for this Cucumber test suite are found here:
 ```
 src/test/java/rummikub/StepDefMeldTesting.java
