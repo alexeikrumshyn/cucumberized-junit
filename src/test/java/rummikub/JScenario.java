@@ -10,6 +10,7 @@ public class JScenario {
     public ArrayList<String> allFileLines;
     public String stepDefsFileName;
     public Hashtable<String, ArrayList<String>> methods;
+    public Class stepDefsClass;
 
     public JScenario(String fn, String sd) throws Exception {
         allFileLines = openFile(fn);
@@ -41,7 +42,7 @@ public class JScenario {
      * @throws Exception
      */
     public void run() throws Exception {
-        Class stepDefsClass = Class.forName(this.stepDefsFileName);
+        stepDefsClass = Class.forName(this.stepDefsFileName);
         Object obj = stepDefsClass.getDeclaredConstructor().newInstance();
 
         parseStepDefs();
@@ -294,7 +295,7 @@ public class JScenario {
         methods = new Hashtable<>(); //<method_name, [parameters]>
 
         //loop through all declared methods in step defs class
-        for (Method m : JStepDefs.class.getMethods()) {
+        for (Method m : stepDefsClass.getMethods()) {
             JStep intfc = m.getAnnotation(JStep.class);
             if (intfc == null)
                 continue;
