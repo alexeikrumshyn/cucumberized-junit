@@ -4,7 +4,10 @@ A fourth year honours project for COMP 4905 at Carleton University. The purpose 
 
 ## Getting Started
 
-This repo tracks work on "Cucumberized" JUnit. If you wish to use this framework on another program, you can copy these two files to the other program directory.
+This repo tracks work on "Cucumberized" JUnit. For a demo of running this tool and an analysis of the code:
+https://youtu.be/wUF_tiurKgU
+
+If you wish to use this framework on another program, you can copy these two files to the other program directory.
 ```
 src/test/java/rummikub/JScenario.java
 src/test/java/rummikub/JStep.java
